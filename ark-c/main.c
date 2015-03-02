@@ -67,11 +67,11 @@ void Input()
 	l = 1;
 
 	// total number of grid nodes along the x1 axis
-	n1_g = 32;
+	n1_g = 16;
 	// total number of grid nodes along the X2 axis
-	n2_g = 4;
+	n2_g = 16;
 	// total number of grid nodes along the X3 axis
-	n3_g = 4;
+	n3_g = 32;
 
 	// number of grid nodes along the x1 axis to 1 processor
 	n1 = n1_g/1;
@@ -561,6 +561,53 @@ void StressTensor()
 		}
 	}
 
+
+	// #####################################################
+	// 					boudary conditions
+	// #####################################################
+
+	// periodicity along the X3 axis
+	for (int i = 1; i < n2; ++i)
+	{
+		for (int j = 1; j < n1; ++j)
+		{
+			// periodicity conditions on the north plane
+			u1Con[i][j][n3] = u1Con[i][j][1];
+			u2Con[i][j][n3] = u2Con[i][j][1];
+			u3Con[i][j][n3] = u3Con[i][j][1];
+			roCon[i][j][n3] = roCon[i][j][1];
+			tCon[i][j][n3] = tCon[i][j][1];
+
+			// periodicity conditions on the south plane
+			u1Con[i][j][0] = u1Con[i][j][n3 - 1];
+			u2Con[i][j][0] = u2Con[i][j][n3 - 1];
+			u3Con[i][j][0] = u3Con[i][j][n3 - 1];
+			roCon[i][j][0] = roCon[i][j][n3 - 1];
+			tCon[i][j][0] = tCon[i][j][n3 - 1];
+		}
+	}
+
+	// periodicity along the X2 axis
+	for (int j = 1; j < n1; j++)
+	{
+		for (int k = 1; k < n3; k++)
+		{
+			// periodicity conditions on the north plane
+			u1Con[n2][j][k] = u1nCon[1][j][k];
+			u2Con[n2][j][k] = u2nCon[1][j][k];
+			u3Con[n2][j][k] = u3nCon[1][j][k];
+			roCon[n2][j][k] = ronCon[1][j][k];
+			tCon[n2][j][k] = tnCon[1][j][k];
+
+			// periodicity conditions on the south plane
+			u1Con[0][j][k] = u1Con[n2 - 1][j][k];
+			u2Con[0][j][k] = u2Con[n2 - 1][j][k];
+			u3Con[0][j][k] = u3Con[n2 - 1][j][k];
+			roCon[0][j][k] = roCon[n2 - 1][j][k];
+			tCon[0][j][k] = tCon[n2 - 1][j][k];
+		}
+	}
+
 	// no-slip conditions along the X1 axis
 	for (int i = 1; i < n2; ++i)
 	{
@@ -588,7 +635,7 @@ void StressTensor()
 
 	double xle, xlw, xlt, xln, u1_c, u1_ce, u2_c, u2_ce, u3_c, u3_ce;
 
-	// bypassing along the face perpendicular to x1
+	// bypassing along the face perpendicular to X1
 	for (int i = 1; i <= n2; ++i) {
 		for (int k = 1; k <= n3; ++k) {
 			for (int j = 1; j <= n1; ++j) {
@@ -598,13 +645,13 @@ void StressTensor()
 
 				// velocity components in cell centers
 				u1_c = u1Con[i][j][k];
-				u1_ce = u1Con[i-1][j][k];
+				u1_ce = u1Con[i][j - 1][k];
 
 				u2_c = u2Con[i][j][k];
-				u2_ce = u2Con[i-1][j][k];
+				u2_ce = u2Con[i][j - 1][k];
 
 				u3_c = u3Con[i][j][k];
-				u3_ce = u3Con[i-1][j][k];
+				u3_ce = u3Con[i][j - 1][k];
 
 				// friction stress
 				sigm11[i][j][k]=-VIS*xle*(u1_ce-u1_c)/dx1;
@@ -632,13 +679,13 @@ void StressTensor()
 
 				// velocity components in cell centers
 				u1_c = u1Con[i][j][k];
-				u1_cn = u1Con[i][j-1][k];
+				u1_cn = u1Con[i - 1][j][k];
 
 				u2_c = u2Con[i][j][k];
-				u2_cn = u2Con[i][j-1][k];
+				u2_cn = u2Con[i - 1][j][k];
 
 				u3_c = u3Con[i][j][k];
-				u3_cn = u3Con[i][j-1][k];
+				u3_cn = u3Con[i - 1][j][k];
 
 				// friction stress
 				sigm12[i][j][k]=-VIS*((u1_cn-u1_c)/dx2 -(l-1)*(u2_c+u2_cn))/xln;
@@ -1482,34 +1529,34 @@ void Phase2()
 			}
 
 			// inlet conditions
-			//qn = qBuf[1];
-			//rn = u3Inlet + (ronCon[i][j][1] - ro0_g)*sound / ro0_g;
-			//un = (rn + qn) / 2;
-			//pn = (rn - qn)*sound*ro0_g / 2;
-			//ro_n = ro0_g + pn / sound / sound;
-			//u2_n = u2Inlet;
-			//u1_n = u1Inlet;
-			//tn = tInlet;
-			//p3[i][j][1] = pn;
-			//u33[i][j][1] = un;
-			//ro3[i][j][1] = ro_n;
-			//t3[i][j][1] = tn;
-			//u23[i][j][1] = u2_n;
-			//u13[i][j][1] = u1_n;
+			/*qn = qBuf[1];
+			rn = u3Inlet + (ronCon[i][j][1] - ro0_g)*sound / ro0_g;
+			un = (rn + qn) / 2;
+			pn = (rn - qn)*sound*ro0_g / 2;
+			ro_n = ro0_g + pn / sound / sound;
+			u2_n = u2Inlet;
+			u1_n = u1Inlet;
+			tn = tInlet;
+			p3[i][j][1] = pn;
+			u33[i][j][1] = un;
+			ro3[i][j][1] = ro_n;
+			t3[i][j][1] = tn;
+			u23[i][j][1] = u2_n;
+			u13[i][j][1] = u1_n;*/
 
 			// outlet conditions
-			//rn = rBuf[n3];
-			//pn = pOutlet;
-			//un = rn - pn / ro0_g / sound;
-			//tn = tfBuf[n3];
-			//u2_n = u2fBuf[n3];
-			//u1_n = u3fBuf[n3];
-			//p3[i][j][n3] = pn;
-			//u33[i][j][n3] = un;
-			//ro3[i][j][n3] = ro_n;
-			//t3[i][j][n3] = tn;
-			//u23[i][j][n3] = u2_n;
-			//u13[i][j][n3] = u1_n;
+			/*rn = rBuf[n3];
+			pn = pOutlet;
+			un = rn - pn / ro0_g / sound;
+			tn = tfBuf[n3];
+			u2_n = u2fBuf[n3];
+			u1_n = u3fBuf[n3];
+			p3[i][j][n3] = pn;
+			u33[i][j][n3] = un;
+			ro3[i][j][n3] = ro_n;
+			t3[i][j][n3] = tn;
+			u23[i][j][n3] = u2_n;
+			u13[i][j][n3] = u1_n;*/
 		}
 	}
 }
